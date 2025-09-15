@@ -19,7 +19,6 @@ void main() async {
 
   AdManager.instance.init();
 
-  /// Initialize Branch SDK
   /// Note: This sdk is disabled for now
   //FlutterBranchSdk.validateSDKIntegration();
 
