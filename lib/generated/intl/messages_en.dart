@@ -20,11 +20,14 @@ typedef String MessageIfAbsent(String messageStr, List<dynamic> args);
 class MessageLookup extends MessageLookupByLibrary {
   String get localeName => 'en';
 
+  static String m0(version) => "version ${version}";
+
   final messages = _notInlinedMessages(_notInlinedMessages);
   static Map<String, Function> _notInlinedMessages(_) => <String, Function>{
     "alreadyHaveAccount": MessageLookupByLibrary.simpleMessage(
       "Already have an account?",
     ),
+    "buttonContactUs": MessageLookupByLibrary.simpleMessage("Contact Us"),
     "buttonDone": MessageLookupByLibrary.simpleMessage("Fait"),
     "buttonNext": MessageLookupByLibrary.simpleMessage("Next"),
     "buttonSkip": MessageLookupByLibrary.simpleMessage("Skip"),
@@ -64,6 +67,13 @@ class MessageLookup extends MessageLookupByLibrary {
     "letsPlay": MessageLookupByLibrary.simpleMessage("Let’s play!"),
     "loginButton": MessageLookupByLibrary.simpleMessage("Login"),
     "loginButtonText": MessageLookupByLibrary.simpleMessage("Sign In"),
+    "maintenanceSubtitle": MessageLookupByLibrary.simpleMessage(
+      "Something super-awesome is coming\nRealmWalk is under maintenance",
+    ),
+    "maintenanceTitle": MessageLookupByLibrary.simpleMessage(
+      "We will be back soon!",
+    ),
+    "maintenanceVersionText": m0,
     "noInternetConnection": MessageLookupByLibrary.simpleMessage(
       "No Internet Connection",
     ),
@@ -89,6 +99,9 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "passwordLabel": MessageLookupByLibrary.simpleMessage("Password"),
     "retryText": MessageLookupByLibrary.simpleMessage("Try Again"),
+    "settingsCreatedWithPassion": MessageLookupByLibrary.simpleMessage(
+      "Created with passion ❤️‍🔥",
+    ),
     "userChoiceSubtitle": MessageLookupByLibrary.simpleMessage(
       "Pick the option right for you",
     ),

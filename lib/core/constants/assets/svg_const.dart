@@ -1,3 +1,5 @@
+import 'package:flutter/services.dart';
+
 class SVGConst {
   static SVGConst? _instance;
 
@@ -23,6 +25,8 @@ class SVGConst {
 
   String get logo => toSvg('logo');
 
+  String get instagram => toSvg('instagram');
+
   // Splash View
   String get splash => toIllustration('splash');
 
@@ -30,7 +34,11 @@ class SVGConst {
   String get onboard1 => toIllustration('onboard1');
   String get onboard2 => toIllustration('onboard2');
   String get onboard3 => toIllustration('onboard3');
-  
+
   // Create Account View
   String get createAccount => toIllustration('create_account');
+
+  // Maintenance
+  Future<String> get freshStarter =>
+      rootBundle.loadString(toIllustration('fresh_starter'));
 }

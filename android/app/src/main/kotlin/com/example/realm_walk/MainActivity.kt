@@ -1,4 +1,4 @@
-package com.example.realm_walk
+package com.realmwalk.app
 
 import io.flutter.embedding.android.FlutterActivity
 

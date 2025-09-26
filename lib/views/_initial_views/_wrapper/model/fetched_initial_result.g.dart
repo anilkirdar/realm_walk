@@ -13,22 +13,19 @@ FetchedInitialResult _$FetchedInitialResultFromJson(
   isPremium: json['isPremium'] as bool?,
   isAbleToGetMission: json['isAbleToGetMission'] as bool?,
   submittedMissionCount: (json['submittedMissionCount'] as num?)?.toInt(),
-  premiumRenewalDate:
-      json['premiumRenewalDate'] == null
-          ? null
-          : DateTime.parse(json['premiumRenewalDate'] as String),
+  premiumRenewalDate: json['premiumRenewalDate'] == null
+      ? null
+      : DateTime.parse(json['premiumRenewalDate'] as String),
   subscriptionType: json['subscriptionType'] as String?,
   remainingChatTime: (json['remainingChatTime'] as num?)?.toInt(),
   remainingAgentChatTime: (json['remainingAgentChatTime'] as num?)?.toInt(),
   totalChatTime: (json['totalChatTime'] as num?)?.toInt(),
-  linqoinRewards:
-      (json['linqoinRewards'] as List<dynamic>?)
-          ?.map((e) => e as String)
-          .toList(),
-  premiumRewards:
-      (json['premiumRewards'] as List<dynamic>?)
-          ?.map((e) => e as String)
-          .toList(),
+  linqoinRewards: (json['linqoinRewards'] as List<dynamic>?)
+      ?.map((e) => e as String)
+      .toList(),
+  premiumRewards: (json['premiumRewards'] as List<dynamic>?)
+      ?.map((e) => e as String)
+      .toList(),
   participatedInNPS: json['participatedInNPS'] as bool?,
   isFirstInit: json['isFirstInit'] as bool?,
   totalChatCount: (json['totalChatCount'] as num?)?.toInt(),

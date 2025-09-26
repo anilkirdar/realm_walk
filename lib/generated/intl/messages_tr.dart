@@ -20,11 +20,14 @@ typedef String MessageIfAbsent(String messageStr, List<dynamic> args);
 class MessageLookup extends MessageLookupByLibrary {
   String get localeName => 'tr';
 
+  static String m0(version) => "version ${version}";
+
   final messages = _notInlinedMessages(_notInlinedMessages);
   static Map<String, Function> _notInlinedMessages(_) => <String, Function>{
     "alreadyHaveAccount": MessageLookupByLibrary.simpleMessage(
       "Zaten bir hesabınız var mı?",
     ),
+    "buttonContactUs": MessageLookupByLibrary.simpleMessage("Bize Ulaşın"),
     "buttonDone": MessageLookupByLibrary.simpleMessage("Bitti"),
     "buttonNext": MessageLookupByLibrary.simpleMessage("Sonraki"),
     "buttonSkip": MessageLookupByLibrary.simpleMessage("Atla"),
@@ -62,6 +65,13 @@ class MessageLookup extends MessageLookupByLibrary {
     "letsPlay": MessageLookupByLibrary.simpleMessage("Hadi oynayalım!"),
     "loginButton": MessageLookupByLibrary.simpleMessage("Giriş"),
     "loginButtonText": MessageLookupByLibrary.simpleMessage("Oturum Aç"),
+    "maintenanceSubtitle": MessageLookupByLibrary.simpleMessage(
+      "Süper harika bir şey geliyor\nRealmWalk bakım altında",
+    ),
+    "maintenanceTitle": MessageLookupByLibrary.simpleMessage(
+      "Yakında tekrar geleceğiz!",
+    ),
+    "maintenanceVersionText": m0,
     "noInternetConnection": MessageLookupByLibrary.simpleMessage(
       "İnternet Bağlantısı Yok",
     ),
@@ -89,6 +99,9 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "passwordLabel": MessageLookupByLibrary.simpleMessage("Şifre"),
     "retryText": MessageLookupByLibrary.simpleMessage("Tekrar Deneyin"),
+    "settingsCreatedWithPassion": MessageLookupByLibrary.simpleMessage(
+      "Tutkuyla yaratıldı ❤️‍🔥",
+    ),
     "userChoiceSubtitle": MessageLookupByLibrary.simpleMessage(
       "Sizin için doğru seçeneği seçin",
     ),

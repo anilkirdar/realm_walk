@@ -9,21 +9,39 @@ part of 'wrapper_store.dart';
 // ignore_for_file: non_constant_identifier_names, unnecessary_brace_in_string_interps, unnecessary_lambdas, prefer_expression_function_bodies, lines_longer_than_80_chars, avoid_as, avoid_annotating_with_dynamic, no_leading_underscores_for_local_identifiers
 
 mixin _$WrapperStore on WrapperStoreBase, Store {
-  late final _$isUserPremiumAtom = Atom(
-    name: 'WrapperStoreBase.isUserPremium',
+  late final _$isLoadingAtom = Atom(
+    name: 'WrapperStoreBase.isLoading',
     context: context,
   );
 
   @override
-  bool get isUserPremium {
-    _$isUserPremiumAtom.reportRead();
-    return super.isUserPremium;
+  bool get isLoading {
+    _$isLoadingAtom.reportRead();
+    return super.isLoading;
   }
 
   @override
-  set isUserPremium(bool value) {
-    _$isUserPremiumAtom.reportWrite(value, super.isUserPremium, () {
-      super.isUserPremium = value;
+  set isLoading(bool value) {
+    _$isLoadingAtom.reportWrite(value, super.isLoading, () {
+      super.isLoading = value;
+    });
+  }
+
+  late final _$isErrorAtom = Atom(
+    name: 'WrapperStoreBase.isError',
+    context: context,
+  );
+
+  @override
+  bool get isError {
+    _$isErrorAtom.reportRead();
+    return super.isError;
+  }
+
+  @override
+  set isError(bool value) {
+    _$isErrorAtom.reportWrite(value, super.isError, () {
+      super.isError = value;
     });
   }
 
@@ -45,68 +63,49 @@ mixin _$WrapperStore on WrapperStoreBase, Store {
     });
   }
 
-  late final _$fetchedInitialResultAtom = Atom(
-    name: 'WrapperStoreBase.fetchedInitialResult',
-    context: context,
-  );
+  late final _$userAtom = Atom(name: 'WrapperStoreBase.user', context: context);
 
   @override
-  FetchedInitialResult get fetchedInitialResult {
-    _$fetchedInitialResultAtom.reportRead();
-    return super.fetchedInitialResult;
+  UserModel? get user {
+    _$userAtom.reportRead();
+    return super.user;
   }
 
   @override
-  set fetchedInitialResult(FetchedInitialResult value) {
-    _$fetchedInitialResultAtom.reportWrite(
-      value,
-      super.fetchedInitialResult,
-      () {
-        super.fetchedInitialResult = value;
-      },
-    );
-  }
-
-  late final _$userProfileAtom = Atom(
-    name: 'WrapperStoreBase.userProfile',
-    context: context,
-  );
-
-  @override
-  UserProfileViewDataModel? get userProfile {
-    _$userProfileAtom.reportRead();
-    return super.userProfile;
-  }
-
-  @override
-  set userProfile(UserProfileViewDataModel? value) {
-    _$userProfileAtom.reportWrite(value, super.userProfile, () {
-      super.userProfile = value;
+  set user(UserModel? value) {
+    _$userAtom.reportWrite(value, super.user, () {
+      super.user = value;
     });
-  }
-
-  late final _$initAsyncAction = AsyncAction(
-    'WrapperStoreBase.init',
-    context: context,
-  );
-
-  @override
-  Future<void> init({
-    bool isAuthenticated = true,
-    bool bypassRedirect = false,
-  }) {
-    return _$initAsyncAction.run(
-      () => super.init(
-        isAuthenticated: isAuthenticated,
-        bypassRedirect: bypassRedirect,
-      ),
-    );
   }
 
   late final _$WrapperStoreBaseActionController = ActionController(
     name: 'WrapperStoreBase',
     context: context,
   );
+
+  @override
+  void setLoading(bool value) {
+    final _$actionInfo = _$WrapperStoreBaseActionController.startAction(
+      name: 'WrapperStoreBase.setLoading',
+    );
+    try {
+      return super.setLoading(value);
+    } finally {
+      _$WrapperStoreBaseActionController.endAction(_$actionInfo);
+    }
+  }
+
+  @override
+  void setError(bool value) {
+    final _$actionInfo = _$WrapperStoreBaseActionController.startAction(
+      name: 'WrapperStoreBase.setError',
+    );
+    try {
+      return super.setError(value);
+    } finally {
+      _$WrapperStoreBaseActionController.endAction(_$actionInfo);
+    }
+  }
 
   @override
   void clearAll() {
@@ -123,10 +122,10 @@ mixin _$WrapperStore on WrapperStoreBase, Store {
   @override
   String toString() {
     return '''
-isUserPremium: ${isUserPremium},
+isLoading: ${isLoading},
+isError: ${isError},
 isInitFetched: ${isInitFetched},
-fetchedInitialResult: ${fetchedInitialResult},
-userProfile: ${userProfile}
+user: ${user}
     ''';
   }
 }

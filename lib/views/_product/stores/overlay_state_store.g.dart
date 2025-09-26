@@ -12,12 +12,10 @@ mixin _$OverlayStateStore on OverlayStateStoreBase, Store {
   Computed<bool>? _$hasOverlayStateComputed;
 
   @override
-  bool get hasOverlayState =>
-      (_$hasOverlayStateComputed ??= Computed<bool>(
-            () => super.hasOverlayState,
-            name: 'OverlayStateStoreBase.hasOverlayState',
-          ))
-          .value;
+  bool get hasOverlayState => (_$hasOverlayStateComputed ??= Computed<bool>(
+    () => super.hasOverlayState,
+    name: 'OverlayStateStoreBase.hasOverlayState',
+  )).value;
 
   late final _$overlayStateAtom = Atom(
     name: 'OverlayStateStoreBase.overlayState',

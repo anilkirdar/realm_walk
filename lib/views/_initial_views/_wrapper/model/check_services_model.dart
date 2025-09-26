@@ -5,15 +5,10 @@ part 'check_services_model.g.dart';
 
 @JsonSerializable()
 class CheckServicesModel extends INetworkModel<CheckServicesModel> {
-  bool? isLinqiAppComEnabled, isGoogleComEnabled;
-  String? linqiAppMessage, googleComMessage;
+  bool? isGoogleComEnabled;
+  String? googleComMessage;
 
-  CheckServicesModel({
-    this.isLinqiAppComEnabled,
-    this.isGoogleComEnabled,
-    this.linqiAppMessage,
-    this.googleComMessage,
-  });
+  CheckServicesModel({this.isGoogleComEnabled, this.googleComMessage});
 
   @override
   CheckServicesModel fromJson(Map<String, dynamic> json) =>

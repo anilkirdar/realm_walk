@@ -364,6 +364,56 @@ class S {
   String get continueButton {
     return Intl.message('Continue', name: 'continueButton', desc: '', args: []);
   }
+
+  /// `We will be back soon!`
+  String get maintenanceTitle {
+    return Intl.message(
+      'We will be back soon!',
+      name: 'maintenanceTitle',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Something super-awesome is coming\nRealmWalk is under maintenance`
+  String get maintenanceSubtitle {
+    return Intl.message(
+      'Something super-awesome is coming\nRealmWalk is under maintenance',
+      name: 'maintenanceSubtitle',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Contact Us`
+  String get buttonContactUs {
+    return Intl.message(
+      'Contact Us',
+      name: 'buttonContactUs',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Created with passion ❤️‍🔥`
+  String get settingsCreatedWithPassion {
+    return Intl.message(
+      'Created with passion ❤️‍🔥',
+      name: 'settingsCreatedWithPassion',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `version {version}`
+  String maintenanceVersionText(String version) {
+    return Intl.message(
+      'version $version',
+      name: 'maintenanceVersionText',
+      desc: '',
+      args: [version],
+    );
+  }
 }
 
 class AppLocalizationDelegate extends LocalizationsDelegate<S> {

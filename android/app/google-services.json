@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "1059899116918",
+    "project_id": "realm-walk",
+    "storage_bucket": "realm-walk.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1059899116918:android:063ad3223009c230e7be57",
+        "android_client_info": {
+          "package_name": "com.realmwalk.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAuLU-bz0idPyj5vDL9yvdiCUfUxNbdeT0"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1059899116918:android:907476cf0d8e9a73e7be57",
+        "android_client_info": {
+          "package_name": "com.realmwalk.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAuLU-bz0idPyj5vDL9yvdiCUfUxNbdeT0"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

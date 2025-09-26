@@ -22,18 +22,19 @@ abstract class OnboardViewModelBase with Store, BaseViewModel {
     SystemInit.instance.setSystemUIOverlayStyleOnboardView();
     onboardService = OnboardService(vexanaManager.networkManager);
     pageController = PageController();
+    themeNotifier = Provider.of<ThemeNotifier>(viewModelContext, listen: false);
   }
 
   void dispose() {
     pageController.dispose();
-    SystemInit.instance.setSystemUIOverlayStyle(
-      Provider.of<ThemeNotifier>(viewModelContext, listen: false).isDark,
-    );
+    SystemInit.instance.setSystemUIOverlayStyle(themeNotifier.isDark);
   }
 
   late IOnboardService onboardService;
 
   late PageController pageController;
+
+  late ThemeNotifier themeNotifier;
 
   @observable
   int currentPage = 0;
@@ -53,6 +54,6 @@ abstract class OnboardViewModelBase with Store, BaseViewModel {
   }
 
   void navigateToUserChoice() {
-    viewModelContext.go('/auth/user-choice');
+    viewModelContext.go('/auth/create-account');
   }
 }

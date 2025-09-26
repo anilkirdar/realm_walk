@@ -1,0 +1,96 @@
+name: Deploy to Production
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    services:
+      mongodb:
+        image: mongo:6.0
+        ports:
+          - 27017:27017
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: backend/package-lock.json
+
+      - name: Install dependencies
+        working-directory: ./backend
+        run: npm ci
+
+      - name: Run tests
+        working-directory: ./backend
+        run: npm test
+        env:
+          MONGODB_URI: mongodb+srv://adminUser:1597530aA,@realm-walk.vgyxc4q.mongodb.net/realm_walk?retryWrites=true&w=majority&appName=realm-walk
+          JWT_SECRET: test_secret_key_for_ci_cd_pipeline
+
+  build-and-deploy:
+    needs: test
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v3
+        with:
+          context: ./backend
+          push: true
+          tags: yourusername/ar-mmorpg-backend:latest
+
+      - name: Deploy to server
+        uses: appleboy/ssh-action@v0.1.5
+        with:
+          host: ${{ secrets.HOST }}
+          username: ${{ secrets.USERNAME }}
+          key: ${{ secrets.SSH_KEY }}
+          script: |
+            cd /opt/ar-mmorpg
+            docker-compose pull
+            docker-compose up -d --remove-orphans
+            docker system prune -f
+
+  build-flutter:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.16.0'
+
+      - name: Flutter pub get
+        working-directory: ./frontend
+        run: flutter pub get
+
+      - name: Run Flutter tests
+        working-directory: ./frontend
+        run: flutter test
+
+      - name: Build APK
+        working-directory: ./frontend
+        run: flutter build apk --release --dart-define=ENVIRONMENT=production
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v3
+        with:
+          name: release-apk
+          path: frontend/build/app/outputs/flutter-apk/app-release.apk

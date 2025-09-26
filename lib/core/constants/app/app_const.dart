@@ -2,9 +2,9 @@ class AppConst {
   static const String appName = 'RealmWalk';
 
   // <These constants change with updates>
-  static const int majorVersion = 2;
-  static const int minorVersion = 4;
-  static const int subVersion = 43;
+  static const int majorVersion = 1;
+  static const int minorVersion = 0;
+  static const int subVersion = 0;
 
   static const int androidSubVersion = subVersion;
   static const int iOSSubVersion = subVersion;
@@ -120,4 +120,12 @@ class AppConst {
       'RTCPeerConnectionStateDisconnected';
   static const String peerHangUp = 'peerHangUp';
   static const String hangUpByLimit = 'peerHangUp';
+
+  ///
+  static const String id = 'id';
+  static const String isVerified = 'isVerified';
+  static const String email = 'email';
+  static const String modeStatus = 'modeStatus';
+  static const String message = 'message';
+  static const String error = 'error';
 }

@@ -1,393 +1,324 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_mobx/flutter_mobx.dart';
+import 'package:email_validator/email_validator.dart';
+import 'package:go_router/go_router.dart';
+import '../../login/view/login_view.dart';
+import '../_subviews/character_creation/view/character_creation_view.dart';
 
-import '../../../../core/base/view/base_view.dart';
-import '../../../../core/components/button/adaptive_gradient_button.dart';
-import '../../../../core/components/media/image/base_asset_image.dart';
-import '../../../../core/constants/assets/image_const.dart';
-import '../../../../core/constants/utils/ui_constants/padding_const.dart';
-import '../../../../core/constants/utils/ui_constants/sized_box_const.dart';
-import '../../../../core/constants/utils/ui_constants/text_style_const.dart';
-import '../../../../core/extensions/context_extension.dart';
-import '../../../../core/init/notifier/custom_theme.dart';
-import '../../../../core/init/theme/app_color_scheme.dart';
-import '../../modules/auth_password_field.dart';
-import '../../modules/auth_text_field.dart';
-import '../../modules/social_icon.dart';
-import '../viewmodel/create_account_viewmodel.dart';
+class RegisterScreen extends StatefulWidget {
+  const RegisterScreen({super.key});
 
-class CreateAccountView extends StatelessWidget {
-  const CreateAccountView({super.key});
+  @override
+  State<RegisterScreen> createState() => _RegisterScreenState();
+}
+
+class _RegisterScreenState extends State<RegisterScreen> {
+  final _formKey = GlobalKey<FormState>();
+  final _emailController = TextEditingController();
+  final _usernameController = TextEditingController();
+  final _passwordController = TextEditingController();
+  final _confirmPasswordController = TextEditingController();
+
+  bool _obscurePassword = true;
+  bool _obscureConfirmPassword = true;
+  String? _errorMessage;
+
+  @override
+  void dispose() {
+    _emailController.dispose();
+    _usernameController.dispose();
+    _passwordController.dispose();
+    _confirmPasswordController.dispose();
+    super.dispose();
+  }
+
+  void _proceedToCharacterCreation() {
+    if (!_formKey.currentState!.validate()) return;
+
+    setState(() {
+      _errorMessage = null;
+    });
+
+    context.go(
+      '/auth/character-creation',
+      extra: {
+        'email': _emailController.text.trim(),
+        'username': _usernameController.text.trim(),
+        'password': _passwordController.text,
+      },
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
-    return BaseView<CreateAccountViewModel>(
-      viewName: 'CreateAccountView',
-      viewModel: CreateAccountViewModel(),
-      onModelReady: (viewModel) {
-        viewModel.setContext(context);
-        viewModel.init();
-      },
-      onDispose: (viewModel) => viewModel.dispose(),
-      onPageBuilder: (context, viewModel) {
-        return Scaffold(
-          backgroundColor: Colors.white,
-          body: Observer(
-            builder: (_) {
-              if (viewModel.isLoading) {
-                return const Center(child: CircularProgressIndicator());
-              }
+    return Scaffold(
+      backgroundColor: const Color(0xFF1A1A2E),
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Colors.white),
+          onPressed: () => context.pop(),
+        ),
+      ),
+      body: SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(24.0),
+          child: Form(
+            key: _formKey,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                // Header
+                const Text(
+                  'Maceraya Katıl!',
+                  style: TextStyle(
+                    fontSize: 32,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 10),
 
-              if (viewModel.isError) {
-                return Center(
-                  child: Text(
-                    context.s.formErrorGeneral,
-                    style: TextStyleConst.instance.generalTextStyle1().copyWith(
-                      color: CustomColors.red,
+                Text(
+                  'Hesabını oluştur ve karakterini yarat',
+                  style: TextStyle(fontSize: 16, color: Colors.grey[400]),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 40),
+
+                // Error message
+                if (_errorMessage != null) ...[
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Colors.red.withOpacity(0.1),
+                      border: Border.all(color: Colors.red),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Text(
+                      _errorMessage!,
+                      style: const TextStyle(color: Colors.red),
+                      textAlign: TextAlign.center,
                     ),
                   ),
-                );
-              }
+                  const SizedBox(height: 20),
+                ],
 
-              return SingleChildScrollView(
-                padding: EdgeInsets.only(bottom: kBottomNavigationBarHeight),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    SizedBoxConst.height60,
-
-                    // Character Illustration
-                    // Center(
-                    //   child: SizedBox(
-                    //     width: context.width * 0.7,
-                    //     height: 200,
-                    //     child: Stack(
-                    //       children: [
-                    //         // Background circle
-                    //         Positioned(
-                    //           right: 20,
-                    //           top: 20,
-                    //           child: Container(
-                    //             width: 120,
-                    //             height: 120,
-                    //             decoration: BoxDecoration(
-                    //               color: Colors.pink.shade50,
-                    //               shape: BoxShape.circle,
-                    //             ),
-                    //           ),
-                    //         ),
-                    //         // Character
-                    //         Positioned(
-                    //           left: 10,
-                    //           bottom: 20,
-                    //           child: Container(
-                    //             width: 80,
-                    //             height: 100,
-                    //             child: Stack(
-                    //               children: [
-                    //                 // Head
-                    //                 Positioned(
-                    //                   left: 20,
-                    //                   top: 0,
-                    //                   child: Container(
-                    //                     width: 40,
-                    //                     height: 40,
-                    //                     decoration: const BoxDecoration(
-                    //                       color: Color(0xFFFFDBD1),
-                    //                       shape: BoxShape.circle,
-                    //                     ),
-                    //                     child: const Icon(
-                    //                       Icons.person,
-                    //                       size: 20,
-                    //                       color: Color(0xFF2D3142),
-                    //                     ),
-                    //                   ),
-                    //                 ),
-                    //                 // Body - Pink shirt
-                    //                 Positioned(
-                    //                   left: 15,
-                    //                   top: 35,
-                    //                   child: Container(
-                    //                     width: 50,
-                    //                     height: 45,
-                    //                     decoration: BoxDecoration(
-                    //                       color:
-                    //                           AppColorScheme.instance.primary,
-                    //                       borderRadius: BorderRadius.circular(
-                    //                         8,
-                    //                       ),
-                    //                     ),
-                    //                   ),
-                    //                 ),
-                    //                 // Legs - Teal pants
-                    //                 Positioned(
-                    //                   left: 10,
-                    //                   bottom: 0,
-                    //                   child: Container(
-                    //                     width: 60,
-                    //                     height: 25,
-                    //                     decoration: BoxDecoration(
-                    //                       color: const Color(0xFF4ECDC4),
-                    //                       borderRadius: BorderRadius.circular(
-                    //                         12,
-                    //                       ),
-                    //                     ),
-                    //                   ),
-                    //                 ),
-                    //               ],
-                    //             ),
-                    //           ),
-                    //         ),
-                    //         // Decorative dots
-                    //         Positioned(
-                    //           right: 10,
-                    //           top: 10,
-                    //           child: CircleDot(color: Colors.orange, size: 8),
-                    //         ),
-                    //         Positioned(
-                    //           left: 40,
-                    //           top: 30,
-                    //           child: CircleDot(color: Colors.yellow, size: 6),
-                    //         ),
-                    //         Positioned(
-                    //           right: 40,
-                    //           bottom: 40,
-                    //           child: CircleDot(color: Colors.purple, size: 10),
-                    //         ),
-                    //       ],
-                    //     ),
-                    //   ),
-                    // ),
-                    Align(
-                      alignment: Alignment.center,
-                      child: SizedBox(
-                        width: context.width * 0.9,
-                        child: BaseAssetImage(
-                          ImageConst.instance.createAccount,
-                          fit: BoxFit.contain,
-                          // shouldSetColor: false,
-                          // width: context.width * 0.85,
-                        ),
-                      ),
+                // Email field
+                TextFormField(
+                  controller: _emailController,
+                  keyboardType: TextInputType.emailAddress,
+                  style: const TextStyle(color: Colors.white),
+                  decoration: InputDecoration(
+                    labelText: 'Email',
+                    labelStyle: TextStyle(color: Colors.grey[400]),
+                    prefixIcon: Icon(Icons.email, color: Colors.grey[400]),
+                    filled: true,
+                    fillColor: Colors.white.withOpacity(0.05),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide(color: Colors.grey[600]!),
                     ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide(color: Colors.grey[600]!),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: const BorderSide(color: Colors.blue),
+                    ),
+                  ),
+                  validator: (value) {
+                    if (value == null || value.trim().isEmpty) {
+                      return 'Email zorunludur';
+                    }
+                    if (!EmailValidator.validate(value.trim())) {
+                      return 'Geçerli bir email adresi giriniz';
+                    }
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 20),
 
-                    SizedBoxConst.height40,
+                // Username field
+                TextFormField(
+                  controller: _usernameController,
+                  style: const TextStyle(color: Colors.white),
+                  decoration: InputDecoration(
+                    labelText: 'Kullanıcı Adı',
+                    labelStyle: TextStyle(color: Colors.grey[400]),
+                    prefixIcon: Icon(Icons.person, color: Colors.grey[400]),
+                    filled: true,
+                    fillColor: Colors.white.withOpacity(0.05),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide(color: Colors.grey[600]!),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide(color: Colors.grey[600]!),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: const BorderSide(color: Colors.blue),
+                    ),
+                  ),
+                  validator: (value) {
+                    if (value == null || value.trim().isEmpty) {
+                      return 'Kullanıcı adı zorunludur';
+                    }
+                    if (value.trim().length < 3) {
+                      return 'Kullanıcı adı en az 3 karakter olmalıdır';
+                    }
+                    if (value.trim().length > 20) {
+                      return 'Kullanıcı adı en fazla 20 karakter olabilir';
+                    }
+                    // Basic username validation (only letters, numbers, underscore)
+                    if (!RegExp(r'^[a-zA-Z0-9_]+$').hasMatch(value.trim())) {
+                      return 'Sadece harf, rakam ve _ kullanabilirsiniz';
+                    }
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 20),
 
-                    Padding(
-                      padding: PaddingConst.horizontal32,
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            context.s.createAccountTitle,
-                            style: TextStyleConst.instance.onboardTitle(),
-                          ),
-                          SizedBoxConst.height8,
-                          Text(
-                            context.s.createAccountSubtitle,
-                            style: TextStyleConst.instance
-                                .onboardSubtitle()
-                                .copyWith(height: 1.5),
-                          ),
-                          SizedBoxConst.height32,
+                // Password field
+                TextFormField(
+                  controller: _passwordController,
+                  style: const TextStyle(color: Colors.white),
+                  obscureText: _obscurePassword,
+                  decoration: InputDecoration(
+                    labelText: 'Şifre',
+                    labelStyle: TextStyle(color: Colors.grey[400]),
+                    prefixIcon: Icon(Icons.lock, color: Colors.grey[400]),
+                    suffixIcon: IconButton(
+                      icon: Icon(
+                        _obscurePassword
+                            ? Icons.visibility
+                            : Icons.visibility_off,
+                        color: Colors.grey[400],
+                      ),
+                      onPressed: () {
+                        setState(() {
+                          _obscurePassword = !_obscurePassword;
+                        });
+                      },
+                    ),
+                    filled: true,
+                    fillColor: Colors.white.withOpacity(0.05),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide(color: Colors.grey[600]!),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide(color: Colors.grey[600]!),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: const BorderSide(color: Colors.blue),
+                    ),
+                  ),
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Şifre zorunludur';
+                    }
+                    if (value.length < 6) {
+                      return 'Şifre en az 6 karakter olmalıdır';
+                    }
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 20),
 
-                          Form(
-                            key: viewModel.formKey,
-                            child: Column(
-                              children: [
-                                AuthTextField(
-                                  controller: viewModel.fullNameController,
-                                  label: context.s.fullNameLabel,
-                                  validator: viewModel.validateFullName,
-                                ),
-                                SizedBoxConst.height24,
-                                AuthTextField(
-                                  controller: viewModel.userNameController,
-                                  label: context.s.userNameLabel,
-                                  validator: viewModel.validateUserName,
-                                ),
-                                SizedBoxConst.height24,
-                                AuthTextField(
-                                  controller: viewModel.phoneController,
-                                  label: context.s.yourPhoneLabel,
-                                  keyboardType: TextInputType.phone,
-                                  isPhoneField: true,
-                                  initialPrefix: viewModel.countryCode,
-                                  onPrefixChanged:
-                                      (value) => viewModel.countryCode = value,
-                                  validator: viewModel.validatePhone,
-                                ),
-                                SizedBoxConst.height24,
-                                AuthTextField(
-                                  controller: viewModel.emailController,
-                                  label: context.s.emailLabel,
-                                  keyboardType: TextInputType.emailAddress,
-                                  validator: viewModel.validateEmail,
-                                ),
-                                SizedBoxConst.height24,
-                                Observer(
-                                  builder:
-                                      (_) => AuthPasswordField(
-                                        controller:
-                                            viewModel.passwordController,
-                                        label: context.s.passwordLabel,
-                                        isVisible: viewModel.isPasswordVisible,
-                                        toggleVisibility:
-                                            viewModel.togglePasswordVisibility,
-                                        validator: viewModel.validatePassword,
-                                      ),
-                                ),
-                                SizedBoxConst.height24,
-                                Observer(
-                                  builder:
-                                      (_) => AuthPasswordField(
-                                        controller:
-                                            viewModel.confirmPasswordController,
-                                        label: context.s.confirmPasswordLabel,
-                                        isVisible:
-                                            viewModel.isConfirmPasswordVisible,
-                                        toggleVisibility:
-                                            viewModel
-                                                .toggleConfirmPasswordVisibility,
-                                        validator:
-                                            viewModel.validateConfirmPassword,
-                                      ),
-                                ),
-                              ],
-                            ),
-                          ),
+                // Confirm Password field
+                TextFormField(
+                  controller: _confirmPasswordController,
+                  style: const TextStyle(color: Colors.white),
+                  obscureText: _obscureConfirmPassword,
+                  decoration: InputDecoration(
+                    labelText: 'Şifre Tekrar',
+                    labelStyle: TextStyle(color: Colors.grey[400]),
+                    prefixIcon: Icon(
+                      Icons.lock_outline,
+                      color: Colors.grey[400],
+                    ),
+                    suffixIcon: IconButton(
+                      icon: Icon(
+                        _obscureConfirmPassword
+                            ? Icons.visibility
+                            : Icons.visibility_off,
+                        color: Colors.grey[400],
+                      ),
+                      onPressed: () {
+                        setState(() {
+                          _obscureConfirmPassword = !_obscureConfirmPassword;
+                        });
+                      },
+                    ),
+                    filled: true,
+                    fillColor: Colors.white.withOpacity(0.05),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide(color: Colors.grey[600]!),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide(color: Colors.grey[600]!),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: const BorderSide(color: Colors.blue),
+                    ),
+                  ),
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Şifre tekrarı zorunludur';
+                    }
+                    if (value != _passwordController.text) {
+                      return 'Şifreler eşleşmiyor';
+                    }
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 30),
 
-                          SizedBoxConst.height40,
+                // Continue button
+                LoadingButton(
+                  onPressed: _proceedToCharacterCreation,
+                  isLoading: false,
+                  text: 'Karakter Oluştur',
+                ),
+                const SizedBox(height: 20),
 
-                          Center(
-                            child: Observer(
-                              builder:
-                                  (_) => AdaptiveGradientButton(
-                                    onPressed:
-                                        viewModel.isCreatingAccount
-                                            ? null
-                                            : viewModel.createAccount,
-                                    child:
-                                        viewModel.isCreatingAccount
-                                            ? Row(
-                                              mainAxisSize: MainAxisSize.min,
-                                              children: [
-                                                SizedBox(
-                                                  width: 20,
-                                                  height: 20,
-                                                  child: CircularProgressIndicator(
-                                                    strokeWidth: 2,
-                                                    valueColor:
-                                                        AlwaysStoppedAnimation<
-                                                          Color
-                                                        >(Colors.white),
-                                                  ),
-                                                ),
-                                                SizedBoxConst.width8,
-                                                Text(
-                                                  context.s.createAccountButton,
-                                                  style: TextStyleConst.instance
-                                                      .generalTextStyle1()
-                                                      .copyWith(
-                                                        color: Colors.white,
-                                                        letterSpacing: 0.3,
-                                                      ),
-                                                ),
-                                              ],
-                                            )
-                                            : Text(
-                                              context.s.createAccountTitle,
-                                              style: TextStyleConst.instance
-                                                  .generalTextStyle1()
-                                                  .copyWith(
-                                                    color: Colors.white,
-                                                    letterSpacing: 0.3,
-                                                  ),
-                                            ),
-                                  ),
-                            ),
-                          ),
-
-                          SizedBoxConst.height32,
-
-                          Center(
-                            child: Text(
-                              context.s.connectWithText,
-                              style: TextStyleConst.instance
-                                  .onboardSubtitle()
-                                  .copyWith(
-                                    color: AppColorScheme.instance.primary,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                            ),
-                          ),
-                          SizedBoxConst.height16,
-
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Observer(
-                                builder:
-                                    (_) => SocialIcon(
-                                      color: CustomColors.red,
-                                      icon: Icons.g_mobiledata,
-                                      onPressed: () async {
-                                        if (viewModel.isLoading == false) {
-                                          await viewModel.signInWithGoogle();
-                                        }
-                                      },
-                                    ),
-                              ),
-                              SizedBoxConst.width16,
-                              Observer(
-                                builder:
-                                    (_) => SocialIcon(
-                                      color: Colors.blue,
-                                      icon: Icons.facebook,
-                                      onPressed: () async {
-                                        if (viewModel.isLoading == false) {
-                                          await viewModel.signInWithFacebook();
-                                        }
-                                      },
-                                    ),
-                              ),
-                            ],
-                          ),
-
-                          SizedBoxConst.height32,
-                          Center(
-                            child: Column(
-                              children: [
-                                Text(
-                                  context.s.alreadyHaveAccount,
-                                  style: TextStyleConst.instance
-                                      .onboardSubtitle()
-                                      .copyWith(fontWeight: FontWeight.w500),
-                                ),
-                                SizedBoxConst.height4,
-                                GestureDetector(
-                                  onTap: viewModel.navigateToLogin,
-                                  child: Text(
-                                    context.s.loginButton,
-                                    style:
-                                        TextStyleConst.instance
-                                            .onboardTextLink(),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          SizedBoxConst.height40,
-                        ],
+                // Login link
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      'Zaten hesabın var mı? ',
+                      style: TextStyle(color: Colors.grey[400]),
+                    ),
+                    TextButton(
+                      onPressed: () {
+                        context.go('/auth/login');
+                      },
+                      child: const Text(
+                        'Giriş Yap',
+                        style: TextStyle(
+                          color: Colors.blue,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                     ),
                   ],
                 ),
-              );
-            },
+              ],
+            ),
           ),
-        );
-      },
+        ),
+      ),
     );
   }
 }

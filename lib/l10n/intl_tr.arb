@@ -79,5 +79,22 @@
   "continueButton": "Devam et",
   "@continueButton": {},
   "letsPlay": "Hadi oynayalım!",
-  "@letsPlay": {}
+  "@letsPlay": {},
+  "maintenanceTitle": "Yakında tekrar geleceğiz!",
+  "@maintenanceTitle": {},
+  "maintenanceSubtitle": "Süper harika bir şey geliyor\nRealmWalk bakım altında",
+  "@maintenanceSubtitle": {},
+  "buttonContactUs": "Bize Ulaşın",
+  "@buttonContactUs": {},
+  "settingsCreatedWithPassion": "Tutkuyla yaratıldı ❤️‍🔥",
+  "@settingsCreatedWithPassion": {},
+  "maintenanceVersionText": "version {version}",
+  "@maintenanceVersionText": {
+    "placeholders": {
+      "version": {
+        "type": "String",
+        "example": "1.0.0"
+      }
+    }
+  }
 }

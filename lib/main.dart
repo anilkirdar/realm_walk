@@ -1,5 +1,6 @@
 import 'package:firebase_app_check/firebase_app_check.dart';
 import 'package:firebase_core/firebase_core.dart';
+// import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -12,6 +13,7 @@ import 'core/init/managers/foreground_service_manager.dart';
 import 'core/init/print_dev.dart';
 import 'core/init/system_init.dart';
 // import 'firebase_options.dart';
+import 'firebase_options.dart';
 import 'myapp.dart';
 
 void main() async {
@@ -26,15 +28,15 @@ void main() async {
   if (!kIsWeb) FlutterNativeSplash.preserve(widgetsBinding: widgetsBinding);
 
   /// Initialize firebase
-  // await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
 
   await FirebaseAppCheck.instance.activate(
-    androidProvider:
-        kDebugMode ? AndroidProvider.debug : AndroidProvider.playIntegrity,
-    appleProvider:
-        kDebugMode
-            ? AppleProvider.debug
-            : AppleProvider.appAttestWithDeviceCheckFallback,
+    androidProvider: kDebugMode
+        ? AndroidProvider.debug
+        : AndroidProvider.playIntegrity,
+    appleProvider: kDebugMode
+        ? AppleProvider.debug
+        : AppleProvider.appAttestWithDeviceCheckFallback,
   );
   await FirebaseAppCheck.instance.setTokenAutoRefreshEnabled(true);
 
