@@ -1,39 +1,37 @@
 import 'dart:async';
-import 'dart:math';
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
+
 import '../enum/combat_state_enum.dart';
 import '../enum/gesture_type_enum.dart';
 import '../model/combat_models.dart';
+import '../model/gesture_detection.dart';
+import '../service/i_motion_service.dart';
 import '../service/motion_service.dart';
 import 'i_combat_provider.dart';
 
 class CombatProvider with ChangeNotifier implements ICombatProvider {
-  MotionService motionService = MotionService();
+  // Services
+  late IMotionService _motionService;
 
-  // Combat state
-  CombatStats _playerStats = CombatStats(
-    health: 100,
-    maxHealth: 100,
-    mana: 50,
-    maxMana: 50,
-    energy: 100,
-    maxEnergy: 100,
-    attack: 15,
-    defense: 8,
-  );
-
+  // State variables
+  CombatStats _playerStats = CombatStats();
   CombatState _combatState = CombatState.idle;
   bool _isInCombat = false;
   String? _lastAction;
   DateTime? _lastActionTime;
+  String _characterClass = 'warrior';
+  bool _isTrainingMode = false;
 
-  // Gesture listening
+  // Gesture system
   StreamSubscription<GestureDetection>? _gestureSubscription;
+  final StreamController<GestureDetection> _gestureController =
+      StreamController<GestureDetection>.broadcast();
 
-  // Cooldowns
+  // Cooldowns and timing
   final Map<GestureType, DateTime> _cooldowns = {};
 
-  // Combat actions by class
+  // Character class actions
   final Map<String, List<CombatAction>> _classActions = {
     'warrior': [
       CombatAction(
@@ -53,7 +51,7 @@ class CombatProvider with ChangeNotifier implements ICombatProvider {
         description: 'Güçlü bir üst kroşe',
         baseDamage: 25,
         energyCost: 25,
-        cooldown: Duration(seconds: 2),
+        cooldown: const Duration(seconds: 2),
         animation: 'uppercut',
         effectEmoji: '🥊',
       ),
@@ -64,7 +62,7 @@ class CombatProvider with ChangeNotifier implements ICombatProvider {
         description: 'Etrafındaki tüm düşmanları vur',
         baseDamage: 20,
         energyCost: 30,
-        cooldown: Duration(seconds: 3),
+        cooldown: const Duration(seconds: 3),
         animation: 'spin',
         effectEmoji: '🌪️',
       ),
@@ -92,17 +90,29 @@ class CombatProvider with ChangeNotifier implements ICombatProvider {
         animation: 'heal',
         effectEmoji: '✨',
       ),
+      CombatAction(
+        id: 'mage_shield',
+        gestureType: GestureType.shield,
+        name: 'Büyü Kalkanı',
+        description: 'Savunma kalkanı oluştur',
+        baseDamage: 0,
+        manaCost: 15,
+        energyCost: 10,
+        cooldown: const Duration(seconds: 5),
+        animation: 'shield',
+        effectEmoji: '🛡️',
+      ),
     ],
     'archer': [
       CombatAction(
-        id: 'archer_punch',
+        id: 'archer_quick_shot',
         gestureType: GestureType.punch,
-        name: 'Hızlı Vuruş',
-        description: 'Hızlı bir vuruş',
+        name: 'Hızlı Atış',
+        description: 'Hızlı bir ok atışı',
         baseDamage: 12,
         energyCost: 10,
-        animation: 'quick_strike',
-        effectEmoji: '⚡',
+        animation: 'quick_shot',
+        effectEmoji: '🏹',
       ),
       CombatAction(
         id: 'archer_dodge',
@@ -111,220 +121,389 @@ class CombatProvider with ChangeNotifier implements ICombatProvider {
         description: 'Hızla kaç ve konter saldırı yap',
         baseDamage: 18,
         energyCost: 20,
-        cooldown: Duration(seconds: 2),
+        cooldown: const Duration(seconds: 2),
         animation: 'dodge_strike',
         effectEmoji: '💨',
+      ),
+      CombatAction(
+        id: 'archer_power_shot',
+        gestureType: GestureType.charge,
+        name: 'Güçlü Atış',
+        description: 'Yüksek hasarlı güçlü atış',
+        baseDamage: 30,
+        energyCost: 35,
+        cooldown: const Duration(seconds: 4),
+        animation: 'power_shot',
+        effectEmoji: '🎯',
       ),
     ],
   };
 
-  // Getters
-  CombatStats get playerStats => _playerStats;
-  CombatState get combatState => _combatState;
-  bool get isInCombat => _isInCombat;
-  String? get lastAction => _lastAction;
-
-  // Get available actions for character class
-  List<CombatAction> getActionsForClass(String characterClass) {
-    return _classActions[characterClass] ?? [];
+  // Constructor
+  CombatProvider() {
+    _motionService = MotionService();
+    _initializeDefaultStats();
   }
 
-  // Start combat mode
+  // Getters implementation
   @override
-  void startCombat() {
+  CombatStats get playerStats => _playerStats;
+
+  @override
+  CombatState get combatState => _combatState;
+
+  @override
+  bool get isInCombat => _isInCombat;
+
+  @override
+  String? get lastAction => _lastAction;
+
+  @override
+  DateTime? get lastActionTime => _lastActionTime;
+
+  @override
+  bool get isTrainingMode => _isTrainingMode;
+
+  @override
+  Stream<GestureDetection> get gestureStream => _gestureController.stream;
+
+  @override
+  Future<void> initializeCombat() async {
+    try {
+      debugPrint('⚔️ CombatProvider: Initializing combat system');
+
+      _initializeDefaultStats();
+
+      debugPrint('✅ CombatProvider: Combat system initialized');
+    } catch (e) {
+      debugPrint('❌ CombatProvider: Initialization error - $e');
+    }
+  }
+
+  @override
+  Future<void> startCombat(String characterClass) async {
     if (_isInCombat) return;
 
-    _isInCombat = true;
-    _combatState = CombatState.idle;
+    try {
+      debugPrint(
+        '🏁 CombatProvider: Starting combat with class: $characterClass',
+      );
 
-    // Start listening to gestures
-    motionService.startListening();
-    _gestureSubscription = motionService.gestureStream.listen(_handleGesture);
+      _characterClass = characterClass;
+      _isInCombat = true;
+      _combatState = CombatState.idle;
+      _lastAction = null;
+      _lastActionTime = null;
 
-    // Start energy regeneration
-    _startEnergyRegeneration();
+      // Reset stats for combat
+      _initializeDefaultStats();
+
+      // Start gesture listening
+      startGestureListening();
+
+      debugPrint('✅ CombatProvider: Combat started');
+    } catch (e) {
+      debugPrint('❌ CombatProvider: Start combat error - $e');
+    }
 
     notifyListeners();
   }
 
-  // Stop combat mode
   @override
-  void stopCombat() {
+  Future<void> endCombat() async {
     if (!_isInCombat) return;
+
+    debugPrint('🏁 CombatProvider: Ending combat');
 
     _isInCombat = false;
     _combatState = CombatState.idle;
+    _lastAction = null;
 
-    // Stop listening to gestures
-    motionService.stopListening();
-    _gestureSubscription?.cancel();
-    _gestureSubscription = null;
+    // Stop gesture listening
+    stopGestureListening();
 
+    debugPrint('✅ CombatProvider: Combat ended');
     notifyListeners();
   }
 
-  // Handle detected gestures
-  void _handleGesture(GestureDetection detection) {
-    if (!_isInCombat || _combatState == CombatState.stunned) return;
+  @override
+  void resetCombat() {
+    debugPrint('🔄 CombatProvider: Resetting combat');
 
-    final action = _findActionForGesture(detection.gesture);
-    if (action != null && _canPerformAction(action)) {
-      _performAction(action, detection.intensity);
+    _isInCombat = false;
+    _combatState = CombatState.idle;
+    _lastAction = null;
+    _lastActionTime = null;
+    _cooldowns.clear();
+
+    _initializeDefaultStats();
+    stopGestureListening();
+
+    debugPrint('✅ CombatProvider: Combat reset');
+    notifyListeners();
+  }
+
+  @override
+  void startGestureListening() {
+    if (_gestureSubscription != null) return;
+
+    debugPrint('👁️ CombatProvider: Starting gesture listening');
+
+    _gestureSubscription = _motionService.gestureStream.listen(
+      (gesture) {
+        _gestureController.add(gesture);
+
+        if (_isInCombat || _isTrainingMode) {
+          executeGesture(gesture.gesture);
+        }
+      },
+      onError: (error) {
+        debugPrint('❌ CombatProvider: Gesture stream error - $error');
+      },
+    );
+
+    _motionService.startListening();
+  }
+
+  @override
+  void stopGestureListening() {
+    debugPrint('👁️ CombatProvider: Stopping gesture listening');
+
+    _gestureSubscription?.cancel();
+    _gestureSubscription = null;
+    _motionService.stopListening();
+  }
+
+  @override
+  Future<CombatActionResult> performAction(CombatAction action) async {
+    if (!canPerformAction(action)) {
+      return CombatActionResult(
+        success: false,
+        damage: 0,
+        message: 'Cannot perform action: ${action.name}',
+      );
+    }
+
+    try {
+      debugPrint('🎯 CombatProvider: Performing action: ${action.name}');
+
+      // Set combat state
+      setCombatState(CombatState.attacking);
+      setLastAction(action.name);
+
+      // Calculate damage
+      final damage = _calculateDamage(action);
+      final isCritical = _calculateCritical();
+
+      // Apply costs
+      _applyActionCosts(action);
+
+      // Set cooldown
+      if (action.cooldown != null) {
+        _cooldowns[action.gestureType] = DateTime.now().add(action.cooldown!);
+      }
+
+      // Create result
+      final result = CombatActionResult(
+        success: true,
+        damage: isCritical ? (damage * 1.5).round() : damage,
+        isCritical: isCritical,
+        message: '${action.effectEmoji} ${action.name}',
+        actionId: action.id,
+      );
+
+      // Return to idle after action
+      Future.delayed(const Duration(milliseconds: 500), () {
+        setCombatState(CombatState.idle);
+      });
+
+      debugPrint('✅ CombatProvider: Action performed successfully');
+      notifyListeners();
+
+      return result;
+    } catch (e) {
+      debugPrint('❌ CombatProvider: Perform action error - $e');
+      setCombatState(CombatState.idle);
+
+      return CombatActionResult(
+        success: false,
+        damage: 0,
+        message: 'Action failed: $e',
+      );
     }
   }
 
-  // Find action for gesture based on character class
-  CombatAction? _findActionForGesture(GestureType gesture) {
-    // This would normally use the current character's class
-    // For now, we'll use warrior as default
-    final actions = _classActions['warrior'] ?? [];
-    return actions.where((action) => action.gestureType == gesture).firstOrNull;
+  @override
+  Future<CombatActionResult> executeGesture(GestureType gestureType) async {
+    final actions = getActionsForClass(_characterClass);
+    final action = actions.firstWhere(
+      (a) => a.gestureType == gestureType,
+      orElse: () => actions.first, // Fallback to first action
+    );
+
+    return await performAction(action);
   }
 
-  // Check if action can be performed (cooldown, resources)
-  bool _canPerformAction(CombatAction action) {
+  @override
+  bool canPerformAction(CombatAction action) {
+    // Check energy
+    if (_playerStats.energy < action.energyCost) {
+      return false;
+    }
+
+    // Check mana
+    if (action.manaCost > 0 && _playerStats.mana < action.manaCost) {
+      return false;
+    }
+
     // Check cooldown
-    final lastUsed = _cooldowns[action.gestureType];
-    if (lastUsed != null &&
-        DateTime.now().difference(lastUsed) < action.cooldown) {
-      return false;
-    }
-
-    // Check resources
-    if (((action.manaCost ?? 0) > (_playerStats.mana ?? 0)) ||
-        ((action.energyCost ?? 0) > (_playerStats.energy ?? 0))) {
-      return false;
+    if (action.cooldown != null) {
+      final lastUsed = _cooldowns[action.gestureType];
+      if (lastUsed != null && DateTime.now().isBefore(lastUsed)) {
+        return false;
+      }
     }
 
     return true;
   }
 
-  // Perform combat action
-  void _performAction(CombatAction action, double intensity) {
-    _combatState = CombatState.attacking;
-    _lastAction = action.name;
-    _lastActionTime = DateTime.now();
+  @override
+  List<CombatAction> getActionsForClass(String characterClass) {
+    return _classActions[characterClass] ?? _classActions['warrior']!;
+  }
 
-    // Calculate damage with intensity and random factor
-    final baseDamage = action.baseDamage;
-    final intensityMultiplier = 0.5 + (intensity * 0.5); // 0.5 to 1.0
-    final randomFactor = 0.8 + (Random().nextDouble() * 0.4); // 0.8 to 1.2
-    final finalDamage = ((baseDamage ?? 0) * intensityMultiplier * randomFactor)
-        .round();
+  @override
+  void setCharacterClass(String characterClass) {
+    _characterClass = characterClass;
+    debugPrint('🎭 CombatProvider: Character class set to $characterClass');
+    notifyListeners();
+  }
 
-    // Apply resource costs
+  @override
+  void updatePlayerHealth(int newHealth) {
     _playerStats = _playerStats.copyWith(
-      mana: ((_playerStats.mana ?? 0) - (action.manaCost ?? 0)).clamp(
-        0,
-        (_playerStats.maxMana ?? 0),
-      ),
-      energy: ((_playerStats.energy ?? 0) - (action.energyCost ?? 0)).clamp(
-        0,
-        (_playerStats.maxEnergy ?? 0),
-      ),
+      health: math.max(0, math.min(newHealth, _playerStats.maxHealth)),
+    );
+    debugPrint('❤️ CombatProvider: Health updated to ${_playerStats.health}');
+    notifyListeners();
+  }
+
+  @override
+  void updatePlayerEnergy(int newEnergy) {
+    _playerStats = _playerStats.copyWith(
+      energy: math.max(0, math.min(newEnergy, _playerStats.maxEnergy)),
+    );
+    debugPrint('⚡ CombatProvider: Energy updated to ${_playerStats.energy}');
+    notifyListeners();
+  }
+
+  @override
+  void updatePlayerMana(int newMana) {
+    _playerStats = _playerStats.copyWith(
+      mana: math.max(0, math.min(newMana, _playerStats.maxMana)),
+    );
+    debugPrint('🔮 CombatProvider: Mana updated to ${_playerStats.mana}');
+    notifyListeners();
+  }
+
+  @override
+  void restorePlayerStats() {
+    _playerStats = _playerStats.copyWith(
+      health: _playerStats.maxHealth,
+      energy: _playerStats.maxEnergy,
+      mana: _playerStats.maxMana,
+    );
+    debugPrint('🔄 CombatProvider: Player stats restored');
+    notifyListeners();
+  }
+
+  @override
+  void setCombatState(CombatState state) {
+    _combatState = state;
+    debugPrint('🎯 CombatProvider: Combat state changed to $state');
+    notifyListeners();
+  }
+
+  @override
+  void setLastAction(String action) {
+    _lastAction = action;
+    _lastActionTime = DateTime.now();
+    debugPrint('⚡ CombatProvider: Last action set to $action');
+  }
+
+  @override
+  void enableTrainingMode(bool enabled) {
+    _isTrainingMode = enabled;
+    debugPrint(
+      '🎯 CombatProvider: Training mode ${enabled ? "enabled" : "disabled"}',
     );
 
-    // Handle healing
-    if ((action.baseDamage ?? 0) < 0) {
-      final healing = finalDamage.abs();
-      _playerStats = _playerStats.copyWith(
-        health: ((_playerStats.health ?? 0) + healing).clamp(
-          0,
-          (_playerStats.maxHealth ?? 0),
-        ),
-      );
+    if (enabled) {
+      startGestureListening();
+      _initializeDefaultStats();
+    } else {
+      stopGestureListening();
     }
-
-    // Set cooldown
-    if (action.gestureType != null) {
-      _cooldowns[action.gestureType!] = DateTime.now();
-    }
-
-    // Show action feedback
-    _showActionFeedback(action, finalDamage, intensity);
-
-    // Return to idle after animation
-    Timer(const Duration(milliseconds: 800), () {
-      if (_combatState == CombatState.attacking) {
-        _combatState = CombatState.idle;
-        notifyListeners();
-      }
-    });
 
     notifyListeners();
   }
 
-  // Start energy regeneration
-  void _startEnergyRegeneration() {
-    Timer.periodic(const Duration(seconds: 1), (timer) {
-      if (!_isInCombat) {
-        timer.cancel();
-        return;
-      }
+  @override
+  Duration? getRemainingCooldown(GestureType gestureType) {
+    final lastUsed = _cooldowns[gestureType];
+    if (lastUsed == null) return null;
 
-      // Regenerate energy (5 per second)
-      if ((_playerStats.energy ?? 0) < (_playerStats.maxEnergy ?? 0)) {
-        _playerStats = _playerStats.copyWith(
-          energy: ((_playerStats.energy ?? 0) + 5).clamp(
-            0,
-            _playerStats.maxEnergy ?? 0,
-          ),
-        );
-        notifyListeners();
-      }
+    final now = DateTime.now();
+    if (now.isAfter(lastUsed)) return null;
 
-      // Regenerate mana slowly (1 per 2 seconds)
-      if ((_playerStats.mana ?? 0) < (_playerStats.maxMana ?? 0) &&
-          timer.tick % 2 == 0) {
-        _playerStats = _playerStats.copyWith(
-          mana: ((_playerStats.mana ?? 0) + 1).clamp(
-            0,
-            (_playerStats.maxMana ?? 0),
-          ),
-        );
-        notifyListeners();
-      }
-    });
+    return lastUsed.difference(now);
   }
 
-  // Show action feedback (would integrate with UI animations)
-  void _showActionFeedback(CombatAction action, int damage, double intensity) {
-    print(
-      '${action.effectEmoji} ${action.name} - Hasar: $damage (Yoğunluk: ${intensity.toStringAsFixed(2)})',
+  @override
+  bool isActionOnCooldown(GestureType gestureType) {
+    return getRemainingCooldown(gestureType) != null;
+  }
+
+  // Private helper methods
+  void _initializeDefaultStats() {
+    _playerStats = CombatStats(
+      health: 100,
+      maxHealth: 100,
+      energy: 100,
+      maxEnergy: 100,
+      mana: 50,
+      maxMana: 50,
+      level: 1,
+      experience: 0,
+      attack: 15,
+      defense: 8,
     );
   }
 
-  // Manual trigger for testing
-  @override
-  void triggerAction(GestureType gesture) {
-    final detection = GestureDetection(
-      gesture: gesture,
-      intensity: 0.8,
-      timestamp: DateTime.now(),
-    );
-    _handleGesture(detection);
+  int _calculateDamage(CombatAction action) {
+    final baseDamage = action.baseDamage;
+    final randomFactor = 0.8 + (math.Random().nextDouble() * 0.4); // 80%-120%
+    return (baseDamage * randomFactor).round();
   }
 
-  // Block/Defense
-  @override
-  void activateDefense() {
-    if (_combatState == CombatState.idle && (_playerStats.energy ?? 0) >= 10) {
-      _combatState = CombatState.defending;
-      _playerStats = _playerStats.copyWith(
-        energy: ((_playerStats.energy ?? 0) - 10).clamp(
-          0,
-          (_playerStats.maxEnergy ?? 0),
-        ),
-      );
+  bool _calculateCritical() {
+    return math.Random().nextDouble() < 0.15; // 15% critical chance
+  }
 
-      Timer(const Duration(seconds: 2), () {
-        if (_combatState == CombatState.defending) {
-          _combatState = CombatState.idle;
-          notifyListeners();
-        }
-      });
+  void _applyActionCosts(CombatAction action) {
+    updatePlayerEnergy(_playerStats.energy - action.energyCost);
 
-      notifyListeners();
+    if (action.manaCost > 0) {
+      updatePlayerMana(_playerStats.mana - action.manaCost);
     }
+  }
+
+  @override
+  void dispose() {
+    stopGestureListening();
+    _gestureController.close();
+    _motionService.dispose();
+    debugPrint('🔚 CombatProvider: Disposed');
+    super.dispose();
   }
 }

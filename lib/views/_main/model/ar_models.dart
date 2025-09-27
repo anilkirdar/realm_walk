@@ -1,5 +1,4 @@
 // ignore_for_file: public_member_api_docs, sort_constructors_first
-import 'package:geolocator/geolocator.dart';
 import 'package:json_annotation/json_annotation.dart';
 import 'package:vexana/vexana.dart';
 
@@ -11,22 +10,36 @@ class ARMonster extends INetworkModel<ARMonster> {
   final String? type;
   final String? name;
   final int? level;
-  final ARLocation? location;
+  final double? latitude;
+  final double? longitude;
+  final double? distance;
+  final int? health;
+  final int? maxHealth;
   final MonsterStats? stats;
   final int? timeLeft;
-  final bool isPersonal; // Kişiye özel spawn mı?
-  final String? biome; // Hangi biome'da spawn oldu
-  final double? altitude; // Yükseklik bilgisi
-  final String? ownerId; // Personal spawn için owner
-  final int? spawnSeed; // Deterministic spawn için
-  final int? spawnIndex; // Spawn sırası
+  final bool isPersonal;
+  final String? biome;
+  final double? altitude;
+  final String? ownerId;
+  final int? spawnSeed;
+  final int? spawnIndex;
+  final String? rarity;
+  final List<String>? abilities;
+  final String? description;
+  final String? imageUrl;
+  final DateTime? spawnTime;
+  final DateTime? despawnTime;
 
   const ARMonster({
     this.id,
     this.type,
     this.name,
     this.level,
-    this.location,
+    this.latitude,
+    this.longitude,
+    this.distance,
+    this.health,
+    this.maxHealth,
     this.stats,
     this.timeLeft,
     this.isPersonal = false,
@@ -35,6 +48,12 @@ class ARMonster extends INetworkModel<ARMonster> {
     this.ownerId,
     this.spawnSeed,
     this.spawnIndex,
+    this.rarity,
+    this.abilities,
+    this.description,
+    this.imageUrl,
+    this.spawnTime,
+    this.despawnTime,
   });
 
   factory ARMonster.fromJson(Map<String, dynamic> json) =>
@@ -51,7 +70,11 @@ class ARMonster extends INetworkModel<ARMonster> {
     String? type,
     String? name,
     int? level,
-    ARLocation? location,
+    double? latitude,
+    double? longitude,
+    double? distance,
+    int? health,
+    int? maxHealth,
     MonsterStats? stats,
     int? timeLeft,
     bool? isPersonal,
@@ -60,13 +83,23 @@ class ARMonster extends INetworkModel<ARMonster> {
     String? ownerId,
     int? spawnSeed,
     int? spawnIndex,
+    String? rarity,
+    List<String>? abilities,
+    String? description,
+    String? imageUrl,
+    DateTime? spawnTime,
+    DateTime? despawnTime,
   }) {
     return ARMonster(
       id: id ?? this.id,
       type: type ?? this.type,
       name: name ?? this.name,
       level: level ?? this.level,
-      location: location ?? this.location,
+      latitude: latitude ?? this.latitude,
+      longitude: longitude ?? this.longitude,
+      distance: distance ?? this.distance,
+      health: health ?? this.health,
+      maxHealth: maxHealth ?? this.maxHealth,
       stats: stats ?? this.stats,
       timeLeft: timeLeft ?? this.timeLeft,
       isPersonal: isPersonal ?? this.isPersonal,
@@ -75,311 +108,312 @@ class ARMonster extends INetworkModel<ARMonster> {
       ownerId: ownerId ?? this.ownerId,
       spawnSeed: spawnSeed ?? this.spawnSeed,
       spawnIndex: spawnIndex ?? this.spawnIndex,
+      rarity: rarity ?? this.rarity,
+      abilities: abilities ?? this.abilities,
+      description: description ?? this.description,
+      imageUrl: imageUrl ?? this.imageUrl,
+      spawnTime: spawnTime ?? this.spawnTime,
+      despawnTime: despawnTime ?? this.despawnTime,
     );
   }
+
+  // Helper methods
+  String get displayName => name ?? type ?? 'Unknown Monster';
+
+  String get rarityEmoji {
+    switch (rarity?.toLowerCase()) {
+      case 'common':
+        return '⚪';
+      case 'uncommon':
+        return '🟢';
+      case 'rare':
+        return '🔵';
+      case 'epic':
+        return '🟣';
+      case 'legendary':
+        return '🟡';
+      case 'mythic':
+        return '🔴';
+      default:
+        return '⚪';
+    }
+  }
+
+  String get biomeEmoji {
+    switch (biome?.toLowerCase()) {
+      case 'forest':
+        return '🌲';
+      case 'urban':
+        return '🏙️';
+      case 'desert':
+        return '🏜️';
+      case 'mountain':
+        return '🏔️';
+      case 'water':
+        return '🌊';
+      case 'ice':
+        return '❄️';
+      default:
+        return '🌍';
+    }
+  }
+
+  bool get isAlive => (health ?? 0) > 0;
+  bool get isDead => !isAlive;
+  double get healthPercentage =>
+      maxHealth != null && maxHealth! > 0 ? (health ?? 0) / maxHealth! : 0.0;
 }
 
 @JsonSerializable(explicitToJson: true)
-class ARLocation {
-  final double? latitude;
-  final double? longitude;
-  final double? altitude;
-
-  ARLocation({this.latitude, this.longitude, this.altitude = 0.0});
-
-  factory ARLocation.fromJson(Map<String, dynamic> json) =>
-      _$ARLocationFromJson(json);
-
-  Map<String, dynamic> toJson() => _$ARLocationToJson(this);
-
-  ARLocation fromJson(Map<String, dynamic> json) => _$ARLocationFromJson(json);
-}
-
-@JsonSerializable(explicitToJson: true)
-class ARResource {
+class ARResource extends INetworkModel<ARResource> {
   final String? id;
   final String? type;
-  final ARLocation? location;
+  final String? name;
+  final double? latitude;
+  final double? longitude;
+  final double? distance;
   final int? quantity;
   final String? quality;
   final int? timeLeft;
   final String? biome;
+  final double? altitude;
+  final String? rarity;
+  final String? description;
+  final String? imageUrl;
+  final DateTime? spawnTime;
+  final DateTime? despawnTime;
+  final bool? isHarvestable;
+  final int? harvestAmount;
+  final Duration? harvestTime;
 
-  ARResource({
+  const ARResource({
     this.id,
     this.type,
-    this.location,
+    this.name,
+    this.latitude,
+    this.longitude,
+    this.distance,
     this.quantity,
     this.quality,
     this.timeLeft,
     this.biome,
+    this.altitude,
+    this.rarity,
+    this.description,
+    this.imageUrl,
+    this.spawnTime,
+    this.despawnTime,
+    this.isHarvestable,
+    this.harvestAmount,
+    this.harvestTime,
   });
 
   factory ARResource.fromJson(Map<String, dynamic> json) =>
       _$ARResourceFromJson(json);
 
+  @override
   Map<String, dynamic> toJson() => _$ARResourceToJson(this);
+
+  @override
+  ARResource fromJson(Map<String, dynamic> json) => _$ARResourceFromJson(json);
+
+  ARResource copyWith({
+    String? id,
+    String? type,
+    String? name,
+    double? latitude,
+    double? longitude,
+    double? distance,
+    int? quantity,
+    String? quality,
+    int? timeLeft,
+    String? biome,
+    double? altitude,
+    String? rarity,
+    String? description,
+    String? imageUrl,
+    DateTime? spawnTime,
+    DateTime? despawnTime,
+    bool? isHarvestable,
+    int? harvestAmount,
+    Duration? harvestTime,
+  }) {
+    return ARResource(
+      id: id ?? this.id,
+      type: type ?? this.type,
+      name: name ?? this.name,
+      latitude: latitude ?? this.latitude,
+      longitude: longitude ?? this.longitude,
+      distance: distance ?? this.distance,
+      quantity: quantity ?? this.quantity,
+      quality: quality ?? this.quality,
+      timeLeft: timeLeft ?? this.timeLeft,
+      biome: biome ?? this.biome,
+      altitude: altitude ?? this.altitude,
+      rarity: rarity ?? this.rarity,
+      description: description ?? this.description,
+      imageUrl: imageUrl ?? this.imageUrl,
+      spawnTime: spawnTime ?? this.spawnTime,
+      despawnTime: despawnTime ?? this.despawnTime,
+      isHarvestable: isHarvestable ?? this.isHarvestable,
+      harvestAmount: harvestAmount ?? this.harvestAmount,
+      harvestTime: harvestTime ?? this.harvestTime,
+    );
+  }
+
+  // Helper methods
+  String get displayName => name ?? type ?? 'Unknown Resource';
+
+  String get typeEmoji {
+    switch (type?.toLowerCase()) {
+      case 'herb':
+        return '🌿';
+      case 'ore':
+        return '⛏️';
+      case 'wood':
+        return '🪵';
+      case 'gem':
+        return '💎';
+      case 'crystal':
+        return '💠';
+      case 'rune':
+        return '🔮';
+      default:
+        return '📦';
+    }
+  }
+
+  String get qualityEmoji {
+    switch (quality?.toLowerCase()) {
+      case 'poor':
+        return '⚪';
+      case 'common':
+        return '🟢';
+      case 'uncommon':
+        return '🔵';
+      case 'rare':
+        return '🟣';
+      case 'epic':
+        return '🟡';
+      case 'legendary':
+        return '🔴';
+      default:
+        return '⚪';
+    }
+  }
+
+  bool get canHarvest => (isHarvestable ?? true) && (quantity ?? 0) > 0;
 }
 
-@JsonSerializable()
-class MonsterStats {
+@JsonSerializable(explicitToJson: true)
+class MonsterStats extends INetworkModel<MonsterStats> {
   final int? health;
   final int? maxHealth;
   final int? attack;
   final int? defense;
-  final int? experienceReward;
+  final int? speed;
+  final int? experience;
+  final List<String>? weaknesses;
+  final List<String>? resistances;
 
-  MonsterStats({
+  const MonsterStats({
     this.health,
     this.maxHealth,
     this.attack,
     this.defense,
-    this.experienceReward,
+    this.speed,
+    this.experience,
+    this.weaknesses,
+    this.resistances,
   });
 
   factory MonsterStats.fromJson(Map<String, dynamic> json) =>
       _$MonsterStatsFromJson(json);
 
+  @override
   Map<String, dynamic> toJson() => _$MonsterStatsToJson(this);
+
+  @override
+  MonsterStats fromJson(Map<String, dynamic> json) =>
+      _$MonsterStatsFromJson(json);
+
+  MonsterStats copyWith({
+    int? health,
+    int? maxHealth,
+    int? attack,
+    int? defense,
+    int? speed,
+    int? experience,
+    List<String>? weaknesses,
+    List<String>? resistances,
+  }) {
+    return MonsterStats(
+      health: health ?? this.health,
+      maxHealth: maxHealth ?? this.maxHealth,
+      attack: attack ?? this.attack,
+      defense: defense ?? this.defense,
+      speed: speed ?? this.speed,
+      experience: experience ?? this.experience,
+      weaknesses: weaknesses ?? this.weaknesses,
+      resistances: resistances ?? this.resistances,
+    );
+  }
+
+  // Helper methods
+  double get healthPercentage =>
+      maxHealth != null && maxHealth! > 0 ? (health ?? 0) / maxHealth! : 0.0;
+
+  bool get isAlive => (health ?? 0) > 0;
+  bool get isDead => !isAlive;
 }
 
 @JsonSerializable(explicitToJson: true)
-class PersonalSpawnData extends INetworkModel<PersonalSpawnData> {
-  final List<ARMonster> monsters;
-  final int totalGenerated;
-  final String spawnReason;
-
-  const PersonalSpawnData({
-    this.monsters = const [],
-    this.totalGenerated = 0,
-    this.spawnReason = 'periodic',
-  });
-
-  factory PersonalSpawnData.fromJson(Map<String, dynamic> json) =>
-      _$PersonalSpawnDataFromJson(json);
-
-  Map<String, dynamic> toJson() => _$PersonalSpawnDataToJson(this);
-
-  @override
-  PersonalSpawnData fromJson(Map<String, dynamic> json) =>
-      _$PersonalSpawnDataFromJson(json);
-}
-
-@JsonSerializable(explicitToJson: true)
-class ProximitySpawnData extends INetworkModel<ProximitySpawnData> {
-  final List<ARMonster> monsters;
-  final double movementDistance;
-  final String spawnTrigger;
-
-  const ProximitySpawnData({
-    this.monsters = const [],
-    this.movementDistance = 0.0,
-    this.spawnTrigger = 'movement',
-  });
-
-  factory ProximitySpawnData.fromJson(Map<String, dynamic> json) =>
-      _$ProximitySpawnDataFromJson(json);
-
-  Map<String, dynamic> toJson() => _$ProximitySpawnDataToJson(this);
-
-  @override
-  ProximitySpawnData fromJson(Map<String, dynamic> json) =>
-      _$ProximitySpawnDataFromJson(json);
-}
-
-@JsonSerializable()
 class SpawnDensityInfo extends INetworkModel<SpawnDensityInfo> {
-  final double monsterDensity;
-  final double resourceDensity;
-  final String biome;
-  final String populationLevel;
-  final Map<String, int> spawnRates;
+  final double? monsterDensity;
+  final double? resourceDensity;
+  final int? nearbyMonsters;
+  final int? nearbyResources;
+  final String? biome;
+  final double? spawnRate;
+  final int? maxSpawns;
 
   const SpawnDensityInfo({
-    this.monsterDensity = 0.5,
-    this.resourceDensity = 0.3,
-    this.biome = 'temperate',
-    this.populationLevel = 'medium',
-    this.spawnRates = const {},
+    this.monsterDensity,
+    this.resourceDensity,
+    this.nearbyMonsters,
+    this.nearbyResources,
+    this.biome,
+    this.spawnRate,
+    this.maxSpawns,
   });
 
   factory SpawnDensityInfo.fromJson(Map<String, dynamic> json) =>
       _$SpawnDensityInfoFromJson(json);
 
+  @override
   Map<String, dynamic> toJson() => _$SpawnDensityInfoToJson(this);
 
   @override
   SpawnDensityInfo fromJson(Map<String, dynamic> json) =>
       _$SpawnDensityInfoFromJson(json);
-}
 
-@JsonSerializable(explicitToJson: true)
-class ARObjectsResponse extends INetworkModel<ARObjectsResponse> {
-  final List<ARMonster> monsters;
-  final List<ARResource> resources;
-  final List<ARMonster> personalMonsters;
-  final DateTime? timestamp;
-
-  const ARObjectsResponse({
-    this.monsters = const [],
-    this.resources = const [],
-    this.personalMonsters = const [],
-    this.timestamp,
-  });
-
-  factory ARObjectsResponse.fromJson(Map<String, dynamic> json) =>
-      _$ARObjectsResponseFromJson(json);
-  Map<String, dynamic> toJson() => _$ARObjectsResponseToJson(this);
-
-  @override
-  ARObjectsResponse fromJson(Map<String, dynamic> json) =>
-      _$ARObjectsResponseFromJson(json);
-}
-
-@JsonSerializable(explicitToJson: true)
-class PersonalSpawnsResponse extends INetworkModel<PersonalSpawnsResponse> {
-  final List<ARMonster> monsters;
-  final int? spawnRadius;
-  final DateTime? nextSpawnTime;
-
-  const PersonalSpawnsResponse({
-    this.monsters = const [],
-    this.spawnRadius,
-    this.nextSpawnTime,
-  });
-
-  factory PersonalSpawnsResponse.fromJson(Map<String, dynamic> json) =>
-      _$PersonalSpawnsResponseFromJson(json);
-  Map<String, dynamic> toJson() => _$PersonalSpawnsResponseToJson(this);
-  @override
-  PersonalSpawnsResponse fromJson(Map<String, dynamic> json) =>
-      _$PersonalSpawnsResponseFromJson(json);
-}
-
-@JsonSerializable(explicitToJson: true)
-class NearbyPlayer extends INetworkModel<NearbyPlayer> {
-  final String? playerId;
-  final String? name;
-  final int? level;
-  final String? characterClass;
-  @PositionConverter()
-  final Position? position;
-  final bool? isFriend;
-  final bool? isGuildMember;
-  final DateTime? lastSeen;
-
-  const NearbyPlayer({
-    this.playerId,
-    this.name,
-    this.level,
-    this.characterClass,
-    this.position,
-    this.isFriend,
-    this.isGuildMember,
-    this.lastSeen,
-  });
-
-  factory NearbyPlayer.fromJson(Map<String, dynamic> json) =>
-      _$NearbyPlayerFromJson(json);
-  Map<String, dynamic> toJson() => _$NearbyPlayerToJson(this);
-  @override
-  NearbyPlayer fromJson(Map<String, dynamic> json) =>
-      _$NearbyPlayerFromJson(json);
-}
-
-@JsonSerializable(explicitToJson: true)
-class FriendLocation extends INetworkModel<FriendLocation> {
-  final String? friendId;
-  final String? name;
-  @PositionConverter()
-  final Position? position;
-  final bool? isOnline;
-  final String? guildEmblem;
-
-  const FriendLocation({
-    this.friendId,
-    this.name,
-    this.position,
-    this.isOnline,
-    this.guildEmblem,
-  });
-
-  factory FriendLocation.fromJson(Map<String, dynamic> json) =>
-      _$FriendLocationFromJson(json);
-  Map<String, dynamic> toJson() => _$FriendLocationToJson(this);
-  @override
-  FriendLocation fromJson(Map<String, dynamic> json) =>
-      _$FriendLocationFromJson(json);
-}
-
-@JsonSerializable()
-class ARStats extends INetworkModel<ARStats> {
-  final int? totalMonsters;
-  final int? monstersInRange;
-  final int? personalMonsters;
-  final int? resources;
-  final int? nearbyPlayers;
-  final DateTime? timestamp;
-
-  const ARStats({
-    this.totalMonsters,
-    this.monstersInRange,
-    this.personalMonsters,
-    this.resources,
-    this.nearbyPlayers,
-    this.timestamp,
-  });
-
-  factory ARStats.fromJson(Map<String, dynamic> json) =>
-      _$ARStatsFromJson(json);
-  Map<String, dynamic> toJson() => _$ARStatsToJson(this);
-
-  factory ARStats.empty() => ARStats(
-    totalMonsters: 0,
-    monstersInRange: 0,
-    personalMonsters: 0,
-    resources: 0,
-    nearbyPlayers: 0,
-    timestamp: DateTime.now(),
-  );
-
-  @override
-  ARStats fromJson(Map<String, dynamic> json) => _$ARStatsFromJson(json);
-}
-
-class PositionConverter
-    implements JsonConverter<Position, Map<String, dynamic>> {
-  const PositionConverter();
-
-  @override
-  Position fromJson(Map<String, dynamic> json) {
-    return Position(
-      latitude: (json['latitude'] as num?)?.toDouble() ?? 0.0,
-      longitude: (json['longitude'] as num?)?.toDouble() ?? 0.0,
-      timestamp: json['timestamp'] != null
-          ? DateTime.parse(json['timestamp'])
-          : DateTime.now(),
-      accuracy: (json['accuracy'] as num?)?.toDouble() ?? 0.0,
-      altitude: (json['altitude'] as num?)?.toDouble() ?? 0.0,
-      heading: (json['heading'] as num?)?.toDouble() ?? 0.0,
-      speed: (json['speed'] as num?)?.toDouble() ?? 0.0,
-      speedAccuracy: (json['speedAccuracy'] as num?)?.toDouble() ?? 0.0,
-      altitudeAccuracy: (json['altitudeAccuracy'] as num?)?.toDouble() ?? 0.0,
-      headingAccuracy: (json['headingAccuracy'] as num?)?.toDouble() ?? 0.0,
+  SpawnDensityInfo copyWith({
+    double? monsterDensity,
+    double? resourceDensity,
+    int? nearbyMonsters,
+    int? nearbyResources,
+    String? biome,
+    double? spawnRate,
+    int? maxSpawns,
+  }) {
+    return SpawnDensityInfo(
+      monsterDensity: monsterDensity ?? this.monsterDensity,
+      resourceDensity: resourceDensity ?? this.resourceDensity,
+      nearbyMonsters: nearbyMonsters ?? this.nearbyMonsters,
+      nearbyResources: nearbyResources ?? this.nearbyResources,
+      biome: biome ?? this.biome,
+      spawnRate: spawnRate ?? this.spawnRate,
+      maxSpawns: maxSpawns ?? this.maxSpawns,
     );
-  }
-
-  @override
-  Map<String, dynamic> toJson(Position position) {
-    return {
-      'latitude': position.latitude,
-      'longitude': position.longitude,
-      'timestamp': position.timestamp.toIso8601String(),
-      'accuracy': position.accuracy,
-      'altitude': position.altitude,
-      'heading': position.heading,
-      'speed': position.speed,
-      'speedAccuracy': position.speedAccuracy,
-    };
   }
 }

@@ -3,6 +3,7 @@ import 'dart:math';
 import 'package:sensors_plus/sensors_plus.dart';
 
 import '../enum/gesture_type_enum.dart';
+import '../model/gesture_detection.dart';
 import 'i_motion_service.dart';
 
 class MotionService extends IMotionService {
@@ -12,21 +13,37 @@ class MotionService extends IMotionService {
 
   bool _isListening = false;
   DateTime? _lastGestureTime;
-  static const Duration _gestureCooldown = Duration(milliseconds: 500);
+  Duration _gestureCooldown = const Duration(milliseconds: 500);
+  double _sensitivity = 1.0;
 
-  // Gesture thresholds
-  static const double _punchThreshold = 12.0;
-  static const double _uppercutThreshold = 15.0;
-  static const double _blockThreshold = 8.0;
-  static const double _spinThreshold = 3.0;
-  static const double _shakeThreshold = 20.0;
+  // Gesture thresholds (adjustable with sensitivity)
+  double get _punchThreshold => 12.0 * _sensitivity;
+  double get _uppercutThreshold => 15.0 * _sensitivity;
+  double get _blockThreshold => 8.0 * _sensitivity;
+  double get _spinThreshold => 3.0 * _sensitivity;
+  double get _shakeThreshold => 20.0 * _sensitivity;
 
+  @override
   Stream<GestureDetection> get gestureStream =>
       _gestureController?.stream ?? const Stream.empty();
 
   @override
+  bool get isListening => _isListening;
+
+  @override
+  double get currentSensitivity => _sensitivity;
+
+  @override
+  Duration get gestureCooldown => _gestureCooldown;
+
+  @override
+  DateTime? get lastGestureTime => _lastGestureTime;
+
+  @override
   void startListening() {
     if (_isListening) return;
+
+    print('🎯 MotionService: Starting gesture detection');
 
     _isListening = true;
     _gestureController = StreamController<GestureDetection>.broadcast();
@@ -34,19 +51,29 @@ class MotionService extends IMotionService {
     // Accelerometer for linear movements
     _accelerometerSubscription = accelerometerEvents.listen(
       _handleAccelerometerEvent,
-      onError: (error) => print('Accelerometer error: $error'),
+      onError: (error) {
+        print('❌ MotionService: Accelerometer error - $error');
+        _gestureController?.addError(error);
+      },
     );
 
     // Gyroscope for rotational movements
     _gyroscopeSubscription = gyroscopeEvents.listen(
       _handleGyroscopeEvent,
-      onError: (error) => print('Gyroscope error: $error'),
+      onError: (error) {
+        print('❌ MotionService: Gyroscope error - $error');
+        _gestureController?.addError(error);
+      },
     );
+
+    print('✅ MotionService: Gesture detection started');
   }
 
   @override
   void stopListening() {
     if (!_isListening) return;
+
+    print('⏹️ MotionService: Stopping gesture detection');
 
     _isListening = false;
     _accelerometerSubscription?.cancel();
@@ -56,14 +83,85 @@ class MotionService extends IMotionService {
     _accelerometerSubscription = null;
     _gyroscopeSubscription = null;
     _gestureController = null;
+
+    print('✅ MotionService: Gesture detection stopped');
   }
 
+  @override
+  void triggerSpellGesture(GestureType spellType) {
+    if (canDetectGesture()) {
+      print('🪄 MotionService: Manual spell gesture triggered - $spellType');
+      _emitGesture(spellType, 0.8);
+    }
+  }
+
+  @override
+  void triggerCustomGesture(GestureType gestureType, double intensity) {
+    if (canDetectGesture()) {
+      print('⚡ MotionService: Custom gesture triggered - $gestureType');
+      _emitGesture(gestureType, intensity.clamp(0.0, 1.0));
+    }
+  }
+
+  @override
+  void calibrateSensors() {
+    print('🔧 MotionService: Calibrating sensors');
+    // Reset any offset values or calibration data
+    _lastGestureTime = null;
+    print('✅ MotionService: Sensor calibration complete');
+  }
+
+  @override
+  void resetCalibration() {
+    print('🔄 MotionService: Resetting calibration');
+    _sensitivity = 1.0;
+    _gestureCooldown = const Duration(milliseconds: 500);
+    _lastGestureTime = null;
+    print('✅ MotionService: Calibration reset');
+  }
+
+  @override
+  void setSensitivity(double sensitivity) {
+    _sensitivity = sensitivity.clamp(0.1, 3.0);
+    print(
+      '📊 MotionService: Sensitivity set to ${_sensitivity.toStringAsFixed(1)}',
+    );
+  }
+
+  @override
+  void setGestureCooldown(Duration cooldown) {
+    _gestureCooldown = cooldown;
+    print(
+      '⏱️ MotionService: Gesture cooldown set to ${cooldown.inMilliseconds}ms',
+    );
+  }
+
+  @override
+  bool canDetectGesture() {
+    if (!_isListening) return false;
+
+    final now = DateTime.now();
+    if (_lastGestureTime != null &&
+        now.difference(_lastGestureTime!) < _gestureCooldown) {
+      return false;
+    }
+    return true;
+  }
+
+  @override
+  void dispose() {
+    stopListening();
+    print('🔚 MotionService: Disposed');
+  }
+
+  // Private methods
   void _handleAccelerometerEvent(AccelerometerEvent event) {
-    if (!_canDetectGesture()) return;
+    if (!canDetectGesture()) return;
 
     final magnitude = sqrt(
       event.x * event.x + event.y * event.y + event.z * event.z,
     );
+
     final gesture = _detectAccelerometerGesture(event, magnitude);
 
     if (gesture != GestureType.none) {
@@ -72,11 +170,12 @@ class MotionService extends IMotionService {
   }
 
   void _handleGyroscopeEvent(GyroscopeEvent event) {
-    if (!_canDetectGesture()) return;
+    if (!canDetectGesture()) return;
 
     final rotationMagnitude = sqrt(
       event.x * event.x + event.y * event.y + event.z * event.z,
     );
+
     final gesture = _detectGyroscopeGesture(event, rotationMagnitude);
 
     if (gesture != GestureType.none) {
@@ -88,7 +187,7 @@ class MotionService extends IMotionService {
     AccelerometerEvent event,
     double magnitude,
   ) {
-    // Strong shake for special attacks
+    // Strong shake for special attacks (fireball)
     if (magnitude > _shakeThreshold) {
       return GestureType.fireball;
     }
@@ -132,31 +231,32 @@ class MotionService extends IMotionService {
       return GestureType.heal;
     }
 
-    return GestureType.none;
-  }
-
-  bool _canDetectGesture() {
-    final now = DateTime.now();
-    if (_lastGestureTime != null &&
-        now.difference(_lastGestureTime!) < _gestureCooldown) {
-      return false;
+    // Shield gesture (controlled rotation)
+    if (magnitude > 0.5 && magnitude < 1.5) {
+      return GestureType.shield;
     }
-    return true;
+
+    return GestureType.none;
   }
 
   void _emitGesture(GestureType gesture, double intensity) {
     _lastGestureTime = DateTime.now();
-    _gestureController?.add(
-      GestureDetection(
-        gesture: gesture,
-        intensity: intensity,
-        timestamp: _lastGestureTime!,
-      ),
+
+    final detection = GestureDetection(
+      gesture: gesture,
+      intensity: intensity,
+      timestamp: _lastGestureTime!,
+    );
+
+    _gestureController?.add(detection);
+
+    print(
+      '⚡ MotionService: Gesture detected - ${gesture.name} (${intensity.toStringAsFixed(2)})',
     );
   }
 
   double _calculateIntensity(double magnitude) {
-    // Normalize intensity between 0.0 and 1.0
+    // Normalize intensity between 0.0 and 1.0 based on magnitude
     return (magnitude / 25.0).clamp(0.0, 1.0);
   }
 
@@ -164,28 +264,4 @@ class MotionService extends IMotionService {
     // Normalize rotation intensity
     return (magnitude / 5.0).clamp(0.0, 1.0);
   }
-
-  // Manual gesture for spell casting (pattern-based)
-  @override
-  void triggerSpellGesture(GestureType spellType) {
-    if (_canDetectGesture()) {
-      _emitGesture(spellType, 0.8);
-    }
-  }
-}
-
-class GestureDetection {
-  final GestureType gesture;
-  final double intensity;
-  final DateTime timestamp;
-
-  GestureDetection({
-    required this.gesture,
-    required this.intensity,
-    required this.timestamp,
-  });
-
-  @override
-  String toString() =>
-      'GestureDetection($gesture, ${intensity.toStringAsFixed(2)})';
 }

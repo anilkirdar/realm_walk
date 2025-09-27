@@ -1,20 +1,39 @@
+import 'dart:async';
 import 'package:geolocator/geolocator.dart';
+import 'package:vexana/vexana.dart';
+
+import '../../../../core/init/firebase/crashlytics/crashlytics_manager.dart';
+import '../../../../core/init/network/model/error_model_custom.dart';
 
 abstract class ILocationService {
-  Future<Position?> getCurrentPosition();
+  ILocationService(this.manager);
 
-  Stream<Position> startLocationTracking({
-    int distanceFilter = 10, // meters
-    LocationAccuracy accuracy = LocationAccuracy.high,
-  });
+  final INetworkManager<ErrorModelCustom> manager;
+  final CrashlyticsManager crashlyticsManager = CrashlyticsManager.instance;
+  final CrashlyticsMessages crashlyticsMessages = CrashlyticsMessages.instance;
 
-  void stopLocationTracking();
-
+  // Permission management
+  Future<bool> requestLocationPermission();
+  Future<bool> hasLocationPermission();
   Future<bool> isLocationServiceEnabled();
 
-  double distanceBetween(double lat1, double lon1, double lat2, double lon2);
+  // Location tracking
+  Future<Position?> getCurrentPosition();
+  Stream<Position> startLocationTracking({int distanceFilter = 10});
+  void stopLocationTracking();
 
-  Position? getLastKnownPosition();
+  // Distance calculations
+  double calculateDistance(
+    double startLatitude,
+    double startLongitude,
+    double endLatitude,
+    double endLongitude,
+  );
 
-  Future<bool> showLocationSettingsDialog();
+  // Location validation
+  bool isValidLocation(double latitude, double longitude);
+
+  // Background location
+  Future<bool> enableBackgroundLocation();
+  Future<bool> disableBackgroundLocation();
 }
